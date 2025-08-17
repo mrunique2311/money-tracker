@@ -1,11 +1,3 @@
-name: Build APK
-
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
-
-jobs:
   build:
     runs-on: ubuntu-latest
     steps:
@@ -22,10 +14,14 @@ jobs:
 
       - run: flutter pub get
 
-      - name: Build APK (skip legacy checks)
+      - name: 🔥 ERASE bad Java path & upgrade AGP
         run: |
-          flutter build apk --release \
-            --android-skip-build-dependency-validation
+          # 1. Remove any rogue java-home
+          sed -i '/org.gradle.java.home.*/d' android/gradle.properties 2>/dev/null || true
+          # 2. Force AGP 7.4.2 (Flutter 3.24 compatible)
+          perl -0777 -pe "s|classpath 'com.android.tools.build:gradle:[^']*'|classpath 'com.android.tools.build:gradle:7.4.2'|g" android/build.gradle
+          # 3. Accept the new template
+          flutter build apk --release --android-skip-build-dependency-validation
 
       - uses: actions/upload-artifact@v4
         with:
